@@ -104,7 +104,7 @@
                         />
                       </div>
                     </template>
-                    <v-date-picker required v-model="date" @click="dialogOpen = false"></v-date-picker>
+                    <v-date-picker required v-model="date"></v-date-picker>
                   </v-menu>
                   <v-text-field
                     v-model="type"
@@ -116,7 +116,7 @@
 
                 <v-card-actions> 
                   <v-spacer></v-spacer>
-                  
+
                   <v-btn
                     text="Add"
                     @click="addExpense(sum, type, date, isActive)"
@@ -142,7 +142,7 @@
             <div class="history-item" v-for="n in list" :class="n.income ? 'income' : 'expense'" :key="n">
               <div class="sum">{{ n.sum }}</div>
               <div class="type">{{ n.type }}</div>
-              <div class="date">{{ new Date(n.date).getDay() + '/' + new Date(n.date).getMonth() + '/' + new Date(n.date).getFullYear() }}</div>
+              <div class="date">{{ new Date(n.date).getDate() + '/' + (new Date(n.date).getMonth()+1) + '/' + new Date(n.date).getFullYear() }}</div>
             </div>
           </div>
         </div>
@@ -289,8 +289,7 @@ async function addExpense(sum, type, date, isActive){
     }
 
     list.value.push(newExpense)
-    resetValues()
-    isActive.value = false
+    resetValues(isActive)
 }
 
 const dialogOpen = ref(false)
@@ -312,4 +311,8 @@ const rules = ref([
 const dateRules = ref([
   v => !!v || 'Date is required',
 ])
+
+watch(date, async(newDate, oldDate) => {
+  dialogOpen.value = false
+})
 </script>
