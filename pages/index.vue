@@ -21,7 +21,7 @@
           </template>
 
           <template v-slot:default="{ isActive }">
-            <v-card title="Add income" >
+            <v-card title="Add Income">
               <v-form @submit.prevent ref="form">
                 <div class="px-6">
                   <v-text-field
@@ -29,27 +29,36 @@
                     :rules="rules"
                     label="Sum"
                     required
-                  ></v-text-field>
-                  <v-text-field
-                    v-model="date"
-                    :rules="rules"
-                    label="Date"
-                    required
-                    ></v-text-field>
+                  />
+                  <v-menu v-model="dialogOpen" :close-on-content-click="false">
+                    <template v-slot:activator="{ props }">
+                      <div class="date-input">
+                        <v-btn class="mt-1" icon="mdi-calendar" flat v-bind="props"></v-btn>
+                        <v-text-field
+                          v-model="date"
+                          :rules="dateRules"
+                          label="Date"
+                          required
+                          disabled
+                        />
+                      </div>
+                    </template>
+                    <v-date-picker required v-model="date"></v-date-picker>
+                  </v-menu>
                   <v-text-field
                     v-model="type"
                     :rules="rules"
                     label="Type"
                     required
-                  ></v-text-field>
+                  />
                 </div>
 
-                <v-card-actions>
+                <v-card-actions> 
                   <v-spacer></v-spacer>
 
                   <v-btn
                     text="Add"
-                    @click="addIncome(sum, type, date, isActive);"
+                    @click="addIncome(sum, type, date, isActive)"
                   ></v-btn>
                   <v-btn
                     text="Cancel"
@@ -85,12 +94,6 @@
                     label="Sum"
                     required
                   />
-                  <!-- <v-date-input
-                    v-model="date"
-                    :rules="dateRules"
-                    label="Date input"
-                    required
-                  /> -->
                   <v-menu v-model="dialogOpen" :close-on-content-click="false">
                     <template v-slot:activator="{ props }">
                       <div class="date-input">
@@ -138,13 +141,14 @@
           <h2>
             History:
           </h2>
-          <div class="history-all">
+          <div class="history-all" v-if="list.length > 0">
             <div class="history-item" v-for="n in list" :class="n.income ? 'income' : 'expense'" :key="n">
               <div class="sum">{{ n.sum }}</div>
               <div class="type">{{ n.type }}</div>
               <div class="date">{{ new Date(n.date).getDate() + '/' + (new Date(n.date).getMonth()+1) + '/' + new Date(n.date).getFullYear() }}</div>
             </div>
           </div>
+          <div class="mt-2" v-else>Nothing here yet...</div>
         </div>
       </div>
     </v-app>
@@ -213,44 +217,52 @@
 </style> 
 
 <script setup>
-const list = ref([
-  {
-    sum: 1000,
-    type: "salary",
-    date: 1722798000000,
-    income: true
-  },
-  {
-    sum: 2000,
-    type: "levak",
-    date: 1722798000000,
-    income: true
-  },
-  {
-    sum: 5000,
-    type: "salary",
-    date: 1722798000000,
-    income: true
-  },
-  {
-    sum: 1000,
-    type: "lunch",
-    date: 1722798000000,
-    income: false
-  },
-  {
-    sum: 4000,
-    type: "oil",
-    date: 1722798000000,
-    income: false
-  },
-  {
-    sum: 500,
-    type: "shopping",
-    date: 1722798000000,
-    income: false
+// const list = ref([
+//   {
+//     sum: 1000,
+//     type: "salary",
+//     date: 1722798000000,
+//     income: true
+//   },
+//   {
+//     sum: 2000,
+//     type: "levak",
+//     date: 1722798000000,
+//     income: true
+//   },
+//   {
+//     sum: 5000,
+//     type: "salary",
+//     date: 1722798000000,
+//     income: true
+//   },
+//   {
+//     sum: 1000,
+//     type: "lunch",
+//     date: 1722798000000,
+//     income: false
+//   },
+//   {
+//     sum: 4000,
+//     type: "oil",
+//     date: 1722798000000,
+//     income: false
+//   },
+//   {
+//     sum: 500,
+//     type: "shopping",
+//     date: 1722798000000,
+//     income: false
+//   }
+// ])
+
+const list = ref([])
+
+onMounted(() => {
+  if(localStorage.getItem('list')) {
+    list.value = JSON.parse(localStorage.getItem('list'))
   }
-])
+})
 
 const form = ref()
 const form2 = ref()
@@ -269,8 +281,10 @@ async function addIncome(sum, type, date, isActive){
     }
 
     list.value.push(newIncome)
-    resetValues()
-    isActive.value = false
+
+    localStorage.setItem('list', JSON.stringify(list.value))
+
+    resetValues(isActive)
 }
 
 async function addExpense(sum, type, date, isActive){
@@ -289,6 +303,9 @@ async function addExpense(sum, type, date, isActive){
     }
 
     list.value.push(newExpense)
+
+    localStorage.setItem('list', JSON.stringify(list.value))
+
     resetValues(isActive)
 }
 
