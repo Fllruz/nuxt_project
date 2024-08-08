@@ -114,9 +114,9 @@
                   />
                 </div>
 
-                <v-card-actions>
+                <v-card-actions> 
                   <v-spacer></v-spacer>
-
+                  
                   <v-btn
                     text="Add"
                     @click="addExpense(sum, type, date, isActive)"
