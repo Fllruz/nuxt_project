@@ -1,3 +1,7 @@
 <template>
-    fllllllllsdfdsf sfd
+    <div>
+
+        fllllllllsdfdsf sfd
+
+    </div>
 </template>
