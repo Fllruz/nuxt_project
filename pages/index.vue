@@ -4,7 +4,7 @@
       <!--Balance-->
       <div class="all-balance">
         <h1 class="balance">Balance:</h1>
-        <h1>$0</h1>
+        <h1>${{ balance }}</h1>
       </div>
 
       <div class="btn_inc_and_exp">
@@ -145,14 +145,41 @@
             <div class="history-item" v-for="n in list" :class="n.income ? 'income' : 'expense'" :key="n">
               <div class="sum">{{ n.sum }}</div>
               <div class="type">{{ n.type }}</div>
-              <div class="date">{{ new Date(n.date).getDate() + '/' + (new Date(n.date).getMonth()+1) + '/' + new Date(n.date).getFullYear() }}</div>
+              <div class="d-flex align-center ga-2">
+                <div class="date">{{ new Date(n.date).getDate() + '/' + (new Date(n.date).getMonth()+1) + '/' + new Date(n.date).getFullYear() }}</div>
+                <v-btn icon="mdi-delete" variant="text" color="black" size="regular" class="mb-1" @click="btn_delete(n)">
+                </v-btn>
+              </div>
+              
             </div>
           </div>
           <div class="mt-2" v-else>Nothing here yet...</div>
         </div>
       </div>
+
+      <div class="btn-reset">
+        <v-btn color="#d3d3d3" @click="reset"> 
+          Reset
+        </v-btn>
+      </div>
+      
+      <div class="btn-lang">
+        <v-select :items="items" v-model="item" density="compact" variant="outlined">
+          <template v-slot:item="{ props, item }">
+            <v-list-item v-bind="props">
+              <template v-slot:prepend>
+                <div>
+                  <img v-if="item.value == 'En'" style="width: 25px; height: 15px; margin-right: 10px;" src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Flag_of_the_United_States_%28DoS_ECA_Color_Standard%29.svg" alt="">
+                  <img v-if="item.value == 'Ru'" style="width: 25px; height: 15px; margin-right: 10px;" src="https://upload.wikimedia.org/wikipedia/en/thumb/f/f3/Flag_of_Russia.svg/640px-Flag_of_Russia.svg.png" alt="">
+                </div>
+              </template>
+            </v-list-item>
+          </template>
+        </v-select>
+      </div>
     </v-app>
   </div>
+  <!--  -->
 </template>
 
 
@@ -214,54 +241,48 @@
   color: red;
 }
 
+.btn-reset {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+}
+
+.btn-lang {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+}
+
 </style> 
 
 <script setup>
-// const list = ref([
-//   {
-//     sum: 1000,
-//     type: "salary",
-//     date: 1722798000000,
-//     income: true
-//   },
-//   {
-//     sum: 2000,
-//     type: "levak",
-//     date: 1722798000000,
-//     income: true
-//   },
-//   {
-//     sum: 5000,
-//     type: "salary",
-//     date: 1722798000000,
-//     income: true
-//   },
-//   {
-//     sum: 1000,
-//     type: "lunch",
-//     date: 1722798000000,
-//     income: false
-//   },
-//   {
-//     sum: 4000,
-//     type: "oil",
-//     date: 1722798000000,
-//     income: false
-//   },
-//   {
-//     sum: 500,
-//     type: "shopping",
-//     date: 1722798000000,
-//     income: false
-//   }
-// ])
+
+let taskId;
+function createtaskId() {
+  taskId++
+  localStorage.setItem('id', JSON.stringify(taskId))
+  return taskId
+}
 
 const list = ref([])
 
 onMounted(() => {
+
+  taskId = JSON.parse(localStorage.getItem('id'))
+
   if(localStorage.getItem('list')) {
     list.value = JSON.parse(localStorage.getItem('list'))
   }
+
+  for (let i=0; i < list.value.length; i++) {
+    if(list.value[i].income) {
+      balance.value += Number.parseInt(list.value[i].sum) 
+    } else {
+      balance.value -= Number.parseInt(list.value[i].sum) 
+    }
+    
+  }
+
 })
 
 const form = ref()
@@ -274,6 +295,7 @@ async function addIncome(sum, type, date, isActive){
     }
 
     let newIncome = {
+      id: createtaskId(),
       sum: sum,
       type: type,
       date: date,
@@ -284,8 +306,12 @@ async function addIncome(sum, type, date, isActive){
 
     localStorage.setItem('list', JSON.stringify(list.value))
 
+
+    balance.value += Number.parseInt(newIncome.sum) 
+
     resetValues(isActive)
 }
+
 
 async function addExpense(sum, type, date, isActive){
     const valid = await form2.value.validate()
@@ -296,6 +322,7 @@ async function addExpense(sum, type, date, isActive){
     let date_ts = new Date(date).getTime()
 
     let newExpense = {
+      id: createtaskId(),
       sum: sum,
       type: type,
       date: date_ts,
@@ -305,6 +332,8 @@ async function addExpense(sum, type, date, isActive){
     list.value.push(newExpense)
 
     localStorage.setItem('list', JSON.stringify(list.value))
+
+    balance.value -= Number.parseInt(newExpense.sum) 
 
     resetValues(isActive)
 }
@@ -332,4 +361,28 @@ const dateRules = ref([
 watch(date, async(newDate, oldDate) => {
   dialogOpen.value = false
 })
+
+const balance = ref(0)
+
+function reset () {
+  list.value = []
+  localStorage.setItem('list', JSON.stringify(list.value))
+  balance.value = 0
+}
+
+function btn_delete (inc_exp) {
+  const newList = list.value.filter(item => item.id !== inc_exp.id)
+
+  if (inc_exp.income) {
+    balance.value -= Number.parseInt(inc_exp.sum)
+  } else {
+    balance.value += Number.parseInt(inc_exp.sum)
+  }
+
+  list.value = newList
+  localStorage.setItem('list', JSON.stringify(list.value))
+}
+
+const items = ref(['En', 'Ru'])
+const item = ref('En')
 </script>
