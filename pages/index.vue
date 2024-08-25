@@ -8,22 +8,26 @@
         <h1>${{ balance }}</h1>
       </div>
 
-      <div class="btn_inc_and_exp">
-        <!-- income button -->
-        <v-dialog @afterLeave="form.reset()" v-model="income_open" max-width="500">
-          <template v-slot:activator="{ props: activatorProps }">
-            <v-btn
-              color="success"
-              size="x-large"
-              v-bind="activatorProps"
-              :text=" $t('income') "
-              variant="flat"
-              @click="isediting = false"
-            ></v-btn>
-          </template>
 
+      <div class="btn_inc_and_exp">
+        <v-btn
+          color="success"
+          size="x-large"
+          :text="$t('income')"
+          variant="flat"
+          @click="isediting = false; form_open = true; isIncome = true"
+        ></v-btn>
+        <v-btn
+          color="error"
+          size="x-large"
+          :text="$t('expense')"
+          variant="flat"
+          @click="isediting = false; form_open = true; isIncome = false"
+        ></v-btn>
+
+        <v-dialog @afterLeave="form.reset()" v-model="form_open" max-width="500">
           <template v-slot:default="{ isActive }">
-            <v-card :title="!isediting ? $t('add_income') : 'Edit income'" >
+            <v-card :title="!isediting ? (isIncome ? $t('add_income') : $t('add_expense')) : (isIncome ? 'Edit income' : 'Edit expense')" >
               <v-form @submit.prevent ref="form">
                 <div class="px-6">
                   <v-text-field
@@ -36,18 +40,32 @@
                     <v-menu v-model="dialogOpen" :close-on-content-click="false">
                       <template v-slot:activator="{ props }">
                         <div class="date-input flex-grow-1">
-                          <v-btn class="mt-1" icon="mdi-calendar" flat v-bind="props"></v-btn>
                           <v-text-field
+                          v-bind="props"
                           v-model="date"
                           :rules="dateRules"
                           :label="$t('date')" 
                           required
-                          disabled
-                          />
+                          readonly
+                          class="mr-4"
+                          >
+                          <template v-slot:prepend>
+                            <v-icon
+                              icon="mdi-calendar"
+                            />
+                          </template>
+                          </v-text-field>
                         </div>
                       </template>
                       <v-locale-provider :locale="locale">
-                        <v-date-picker required v-model="date" hide-header elevation="5"></v-date-picker>
+                        <v-date-picker
+                          required
+                          v-model="pickerDate"
+                          hide-header
+                          header=""
+                          elevation="5"
+                          @update:model-value="date = pickerDate.toLocaleDateString('en', {year: 'numeric', month: '2-digit', day: '2-digit'})">
+                        </v-date-picker>
                       </v-locale-provider>
                     </v-menu>
 
@@ -55,14 +73,14 @@
                       <v-text-field
                         v-model="hours"
                         width="70"
-                        label="hh"
+                        :label="$t('hh')"
                         :rules="[checkhours, checkLength]"
                       ></v-text-field>
                       <span style="padding: 17px 0px">:</span>
                       <v-text-field
                         v-model="minutes"
                         width="70"
-                        label="mm"
+                        :label="$t('mm')"
                         :rules="[checkminutes, checkLength]"
                       ></v-text-field>
                     </div>
@@ -70,9 +88,7 @@
                   </div>
                   <v-text-field
                     v-model="type"
-                    :rules="rules"
                     :label="$t('type')" 
-                    required
                   />
                 </div>
 
@@ -81,110 +97,24 @@
 
                   <v-btn
                     v-if="!isediting"
-                    :text="$t('add')" 
-                    @click="addIncome(sum, type, date, hours, minutes, isActive)"
+                    :text="$t('addcontinue')" 
+                    @click="add_continue(isActive)"
                   ></v-btn>
-                  <v-btn
-                    v-if="isediting"
-                    text="Edit" 
-                    @click="edit(sum, type, date, hours, minutes, false, isActive)"
-                  ></v-btn>
-                  <v-btn
-                    :text="$t('cancel')" 
-                    @click="resetValues(isActive)"
-                  ></v-btn>
-
-                </v-card-actions>
-              </v-form>
-            </v-card>
-          </template>
-        </v-dialog>
-
-
-        <!-- Expense button-->
-        <v-dialog @afterLeave="form2.reset()" v-model="expense_open" max-width="500">
-          <template v-slot:activator="{ props: activatorProps }">
-            <v-btn
-              color="error"
-              size="x-large"
-              v-bind="activatorProps"
-              :text=" $t('expense') "
-              variant="flat"
-              @click="isediting = false"
-            ></v-btn>
-          </template>
-
-          <template v-slot:default="{ isActive }">
-            <v-card :title="!isediting ? $t('add_expense') : 'Edit expense'" >
-              <v-form @submit.prevent ref="form2">
-                <div class="px-6">
-                  <v-text-field
-                    v-model="sum"
-                    :rules="[checkValue, checkNumber]"
-                    :label="$t('sum')" 
-                    required
-                  />
-                  <div class="d-flex">
-                    <v-menu v-model="dialogOpen" :close-on-content-click="false">
-                      <template v-slot:activator="{ props }">
-                        <div class="date-input flex-grow-1">
-                          <v-btn class="mt-1" icon="mdi-calendar" flat v-bind="props"></v-btn>
-                          <v-text-field
-                          v-model="date"
-                          :rules="dateRules"
-                          :label="$t('date')" 
-                          required
-                          disabled
-                          />
-                        </div>
-                      </template>
-                      <v-locale-provider :locale="locale">
-                        <v-date-picker required v-model="date" hide-header elevation="5"></v-date-picker>
-                      </v-locale-provider>
-                    </v-menu>
-
-                    <div class="flex-shrink-1 d-flex ga-1">
-                      <v-text-field
-                        v-model="hours"
-                        width="70"
-                        label="hh"
-                        :rules="[checkhours, checkLength]"
-                      ></v-text-field>
-                      <span style="padding: 17px 0px">:</span>
-                      <v-text-field
-                        v-model="minutes"
-                        width="70"
-                        label="mm"
-                        :rules="[checkminutes, checkLength]"
-                      ></v-text-field>
-                    </div>
-
-                  </div>
-                  <v-text-field
-                    v-model="type"
-                    :rules="rules"
-                    :label="$t('type')" 
-                    required
-                  />
-                </div>
-
-                <v-card-actions> 
-                  <v-spacer></v-spacer>
-
                   <v-btn
                     v-if="!isediting"
                     :text="$t('add')" 
-                    @click="addExpense(sum, type, date, isActive)"
+                    @click="add(isActive)"
                   ></v-btn>
                   <v-btn
                     v-if="isediting"
-                    text="Edit" 
-                    @click="edit(sum, type, date, hours, minutes, true, isActive)"
+                    :text="$t('edit')"  
+                    @click="edit(isActive)"
                   ></v-btn>
                   <v-btn
                     :text="$t('cancel')" 
-                    @click="resetValues(isActive)"
+                    @click="form_open = false; form.reset()"
                   ></v-btn>
+
                 </v-card-actions>
               </v-form>
             </v-card>
@@ -220,7 +150,7 @@
                       :value="index"
                       @click="item.func(n)"
                     >
-                      <v-list-item-title>{{ item.title }}</v-list-item-title>
+                      <v-list-item-title>{{ $t(item.title) }}</v-list-item-title>
                     </v-list-item>
                   </v-list>
                 </v-menu>
@@ -234,9 +164,34 @@
       </div>
 
       <div class="btn-reset">
-        <v-btn color="#d3d3d3" @click="reset"> 
-          {{ $t('reset') }}
-        </v-btn>
+        <v-dialog max-width="500">
+          <template v-slot:activator="{ props: activatorProps }">
+            <v-btn v-bind="activatorProps" color="#d3d3d3"> 
+              {{ $t('reset') }}
+            </v-btn>
+          </template>
+          
+          <template v-slot:default="{ isActive }">
+            <v-card :title="$t('reset')">
+              <v-card-text>
+                {{$t('sure') }}
+              </v-card-text>
+
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                
+                <v-btn
+                  :text="$t('reset')"
+                  @click="reset(); isActive.value = false"
+                ></v-btn>
+                <v-btn
+                  :text="$t('cancel')"
+                  @click="isActive.value = false"
+                ></v-btn>
+              </v-card-actions>
+            </v-card>
+          </template>
+        </v-dialog>
       </div>
       
       <div class="btn-lang">
@@ -335,7 +290,7 @@
 useHead({
   title: 'Money calendar',
   link: [
-    { rel: 'icon', type: 'image/x-icon', href: 'https://e7.pngegg.com/pngimages/753/938/png-clipart-dollar-sign-united-states-dollar-dollar-saving-text-thumbnail.png' }
+    { rel: 'icon', type: 'image/x-icon', href: 'https://www.svgrepo.com/show/158640/monument-of-ismoil-somoni-tajikistan.svg' }
   ]
 })
 
@@ -358,88 +313,45 @@ onMounted(() => {
     list.value = JSON.parse(localStorage.getItem('list'))
   }
 
+  updateBalance()
+
+})
+
+// balance
+const balance = ref(0)
+function updateBalance() {
+  balance.value = 0
+
   for (let i=0; i < list.value.length; i++) {
     if(list.value[i].income) {
       balance.value += Number.parseInt(list.value[i].sum) 
     } else {
       balance.value -= Number.parseInt(list.value[i].sum) 
     }
-    
   }
+}
 
+// forms
+const form = ref()
+const isIncome = ref(true)
+const form_open = ref (false)
+const isediting = ref(false)
+
+// form values
+const dialogOpen = ref(false)
+const sum = ref('')
+const type = ref('')
+const date = ref('')
+const hours = ref('')
+const minutes = ref('')
+const pickerDate = ref(null)
+
+// 
+watch(date, async(newDate, oldDate) => {
+  dialogOpen.value = false
 })
 
-const form = ref()
-const form2 = ref()
-
-async function addIncome(sum, type, date, hours, minutes, isActive){
-    const valid = await form.value.validate()
-    
-    if (!valid.valid) {
-      return
-    }
-    
-    let newDate = new Date(new Date(date).getTime() + Number.parseInt(hours ? hours : 0)*3600*1000 + Number.parseInt(minutes ? minutes : 0)*60*1000)
-
-    let newIncome = {
-      id: createtaskId(),
-      sum: sum,
-      type: type,
-      date: newDate,
-      income: true
-    }
-
-    list.value.push(newIncome)
-
-    localStorage.setItem('list', JSON.stringify(list.value))
-
-
-    balance.value += Number.parseInt(newIncome.sum) 
-
-    resetValues(isActive)
-}
-
-
-async function addExpense(sum, type, date, hours, minutes, isActive){
-    const valid = await form2.value.validate()
-    if (!valid.valid) {
-      return
-    }
-
-    let newDate = new Date(new Date(date).getTime() + Number.parseInt(hours ? hours : 0)*3600*1000 + Number.parseInt(minutes ? minutes : 0)*60*1000)
-
-
-    let newExpense = {
-      id: createtaskId(),
-      sum: sum,
-      type: type,
-      date: newDate,
-      income: false
-    }
-
-    list.value.push(newExpense)
-
-    localStorage.setItem('list', JSON.stringify(list.value))
-
-    balance.value -= Number.parseInt(newExpense.sum) 
-
-    resetValues(isActive)
-}
-
-const dialogOpen = ref(false)
-const sum = ref(null)
-const type = ref(null)
-const date = ref(null)
-
-function resetValues(isActive){
-  sum.value = null
-  date.value = null
-  type.value = null
-  if(isActive) {
-    isActive.value = false
-  }
-}
-
+// rules
 const checkValue = v => !!v || 'Required'
 
 const rules = ref([
@@ -452,8 +364,6 @@ const dateRules = ref([
   v => !!v || 'Date is required',
 ])
 
-const hours = ref('')
-const minutes = ref('')
 const checkhours = v => v >= 0 && v < 25 || "Invalid"
 const checkminutes = v => v >= 0 && v < 61 || "Invalid"
 const checkLength = v => {
@@ -463,33 +373,75 @@ const checkLength = v => {
   return true
 }
 
-watch(date, async(newDate, oldDate) => {
-  dialogOpen.value = false
-})
+// add & continue
+async function add_continue(isActive){
+  const valid = await form.value.validate()
+  
+  if (!valid.valid) {
+    return
+  }
+  
+  let newDate = new Date(new Date(date.value).getTime() + Number.parseInt(hours.value ? hours.value : 0)*3600*1000 + Number.parseInt(minutes.value ? minutes.value : 0)*60*1000)
 
-const balance = ref(0)
+  let newIncome = {
+    id: createtaskId(),
+    sum: sum.value,
+    type: type.value,
+    date: newDate,
+    income: isIncome.value,
+  }
+  
+  list.value.push(newIncome)
 
-function reset () {
-  list.value = []
   localStorage.setItem('list', JSON.stringify(list.value))
-  balance.value = 0
+
+
+  updateBalance()
+
+  form.value.reset()
 }
 
+// add
+async function add(isActive){
+  const valid = await form.value.validate()
+  
+  if (!valid.valid) {
+    return
+  }
+  
+  let newDate = new Date(new Date(date.value).getTime() + Number.parseInt(hours.value ? hours.value : 0)*3600*1000 + Number.parseInt(minutes.value ? minutes.value : 0)*60*1000)
+
+  let newIncome = {
+    id: createtaskId(),
+    sum: sum.value,
+    type: type.value,
+    date: newDate,
+    income: isIncome.value,
+  }
+  
+  list.value.push(newIncome)
+
+  localStorage.setItem('list', JSON.stringify(list.value))
+
+
+  updateBalance()
+
+  form.value.reset()
+  form_open.value = false
+}
+
+// delete
 function btn_delete (inc_exp) {
   const newList = list.value.filter(item => item.id !== inc_exp.id)
 
-  if (inc_exp.income) {
-    balance.value -= Number.parseInt(inc_exp.sum)
-  } else {
-    balance.value += Number.parseInt(inc_exp.sum)
-  }
+  updateBalance()
 
   list.value = newList
   localStorage.setItem('list', JSON.stringify(list.value))
 }
 
-const items = ref(['En', 'Ru'])
-const item = ref('En')
+// edit
+const currentId = ref(null)
 
 const menuItems = ref([
   {
@@ -502,56 +454,44 @@ const menuItems = ref([
   },
 ])
 
-const income_open = ref (false)
-const expense_open = ref (false)
-const isediting = ref(false)
-const currentId = ref(null)
-
 function editClick(inc_exp) {
   isediting.value = true
-  if (inc_exp.income) {
-    income_open.value = true
-  } else {
-    expense_open.value = true
-  }
+  form_open.value = true
+  
   sum.value = inc_exp.sum
   type.value = inc_exp.type
-  date.value = new Date(inc_exp.date)
+  date.value = new Date(inc_exp.date).toLocaleDateString('en', {year: 'numeric', month: '2-digit', day: '2-digit'})
   hours.value = new Date(inc_exp.date).getHours()
   minutes.value = new Date(inc_exp.date).getMinutes()
   currentId.value = inc_exp.id
 }
+async function edit(isActive) {
+  const valid = await form.value.validate()
+  if (!valid.valid) return
 
-async function edit(sum, type, date, hours, minutes, expense, isActive) {
-  if(!expense) {
-    const valid = await form.value.validate()
-    if (!valid.valid) return
-  }
-  if(expense) {
-    const valid = await form2.value.validate()
-    if (!valid.valid) return
-  }
-    
-
-  let hm = new Date(date).getHours()*3600*1000 + new Date(date).getMinutes()*60*1000
-  let newDate = new Date(new Date(date).getTime() + Number.parseInt(hours ? hours : 0)*3600*1000 + Number.parseInt(minutes ? minutes : 0)*60*1000 - hm)
+  let hm = new Date(date.value).getHours()*3600*1000 + new Date(date.value).getMinutes()*60*1000
+  let newDate = new Date(new Date(date.value).getTime() + Number.parseInt(hours.value ? hours.value : 0)*3600*1000 + Number.parseInt(minutes.value ? minutes.value : 0)*60*1000 - hm)
 
 
   let index = list.value.findIndex((el) => el.id == currentId.value)
-  list.value[index].sum = sum
-  list.value[index].type = type
+  list.value[index].sum = sum.value
+  list.value[index].type = type.value
   list.value[index].date = newDate
   
-  balance.value = 0
-  for (let i=0; i < list.value.length; i++) {
-    if(list.value[i].income) {
-      balance.value += Number.parseInt(list.value[i].sum) 
-    } else {
-      balance.value -= Number.parseInt(list.value[i].sum) 
-    }
-  }
+  updateBalance()
 
   localStorage.setItem('list', JSON.stringify(list.value))
   isActive.value = false
 }
+
+// reset
+function reset () {
+  list.value = []
+  localStorage.setItem('list', JSON.stringify(list.value))
+  updateBalance()
+}
+
+// locales
+const items = ref(['En', 'Ru'])
+const item = ref('En')
 </script>

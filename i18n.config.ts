@@ -16,6 +16,13 @@ export default defineI18nConfig(() => ({
         add_expense: 'Add expense',
         add: 'Add',
         cancel: 'Cancel',
+        edit: 'Edit',
+        delete: 'Delete',
+        addcontinue: 'add & continue',
+        sure: 'Are you sure?',
+        hh: 'hh',
+        mm: 'mm',
+
       },
       ru: {
         balance: 'Баланс',
@@ -31,6 +38,13 @@ export default defineI18nConfig(() => ({
         add_expense: 'Добавить расход',
         add: 'Добавить',
         cancel: 'Отмена',
+        edit: 'Изменить',
+        delete: 'Удалить',
+        addcontinue: 'Добавить и продолжить',
+        sure: 'Вы уверены?',
+        hh: 'чч',
+        mm: 'мм',
+
 
 
       
